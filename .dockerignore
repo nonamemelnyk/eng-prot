@@ -1,0 +1,9 @@
+.git
+.venv
+__pycache__
+*.pyc
+.env
+.idea
+node_modules
+frontend/src
+*.md
