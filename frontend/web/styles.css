@@ -27,6 +27,38 @@ body {
   align-items: center;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.locale-switcher {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.locale-btn {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid #4a5568;
+  border-radius: 0.375rem;
+  background: #1a1a2e;
+  color: #9ca3af;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.locale-btn:hover {
+  background: #2d3748;
+  color: #eee;
+}
+
+.locale-btn.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
 .header h1 {
   font-size: 1.25rem;
   font-weight: 600;

@@ -1,6 +1,12 @@
 (function () {
-  const WS_URL = (window.CHAT_CONFIG && window.CHAT_CONFIG.wsUrl) ||
-    (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/api/v1/ws/chat';
+  const LOCALES = ['cz', 'fr'];
+  const pathMatch = location.pathname.match(/^\/(cz|fr)(\/|$)/);
+  let currentLocale = pathMatch ? pathMatch[1] : 'cz';
+
+  function getWsUrl(locale) {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return proto + '//' + location.host + '/' + locale + '/api/v1/ws/chat';
+  }
 
   const messagesEl = document.getElementById('messages');
   const textInput = document.getElementById('textInput');
@@ -104,8 +110,13 @@
   }
 
   function connect() {
+    if (ws) {
+      ws.close();
+      ws = null;
+    }
+    const url = getWsUrl(currentLocale);
     return new Promise((resolve, reject) => {
-      ws = new WebSocket(WS_URL);
+      ws = new WebSocket(url);
       ws.onopen = () => {
         setStatus('Connected', 'connected');
         sendBtn.disabled = false;
@@ -263,6 +274,23 @@
       startRecording();
     }
   });
+
+  function setActiveLocale(locale) {
+    currentLocale = locale;
+    document.querySelectorAll('.locale-btn').forEach((b) => b.classList.remove('active'));
+    document.querySelector('.locale-btn[data-locale="' + locale + '"]')?.classList.add('active');
+    setStatus('Reconnecting...');
+    connect().catch(() => {});
+  }
+
+  document.querySelectorAll('.locale-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const locale = btn.dataset.locale;
+      if (locale !== currentLocale) setActiveLocale(locale);
+    });
+  });
+
+  document.querySelector('.locale-btn[data-locale="' + currentLocale + '"]')?.classList.add('active');
 
   connect();
 })();

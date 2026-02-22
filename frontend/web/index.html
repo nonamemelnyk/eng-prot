@@ -10,7 +10,13 @@
   <div class="app">
     <header class="header">
       <h1>💬 Chat</h1>
-      <span class="status" id="status">Connecting...</span>
+      <div class="header-right">
+        <div class="locale-switcher">
+          <button type="button" id="localeCz" class="locale-btn" data-locale="cz">CZ</button>
+          <button type="button" id="localeFr" class="locale-btn" data-locale="fr">FR</button>
+        </div>
+        <span class="status" id="status">Connecting...</span>
+      </div>
     </header>
 
     <main class="chat">
@@ -29,7 +35,6 @@
     </main>
   </div>
 
-  <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

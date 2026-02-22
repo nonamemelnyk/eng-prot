@@ -1,0 +1,71 @@
+name: Build and Deploy to Cloud Run
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: europe-west1
+  REPOSITORY: eng-prot-repo
+
+concurrency:
+  group: production_deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Docker Auth
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      # --- BACKEND SECTION ---
+      - name: Build and Push Backend
+        run: |
+          # Используем --platform linux/amd64 как в твоей команде
+          docker build --platform linux/amd64 \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/back:${{ github.sha }} \
+            -f docker/backend.Dockerfile .
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/back:${{ github.sha }}
+
+      - name: Deploy Backend to Cloud Run
+        uses: 'google-github-actions/deploy-cloudrun@v2'
+        with:
+          service: 'back-service'
+          image: '${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/back:${{ github.sha }}'
+          region: ${{ env.REGION }}
+          flags: '--allow-unauthenticated --port 8000'
+          secrets: |
+            GROQ_API_KEY=GROQ_API_KEY:latest
+
+      # --- FRONTEND SECTION ---
+      - name: Build and Push Frontend
+        run: |
+          docker build --platform linux/amd64 \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/front:${{ github.sha }} \
+            -f docker/frontend.Dockerfile .
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/front:${{ github.sha }}
+
+      - name: Deploy Frontend to Cloud Run
+        uses: 'google-github-actions/deploy-cloudrun@v2'
+        with:
+          service: 'front-service'
+          image: '${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/front:${{ github.sha }}'
+          region: ${{ env.REGION }}
+          flags: '--allow-unauthenticated --port 80'

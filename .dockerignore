@@ -4,6 +4,8 @@ __pycache__
 *.pyc
 .env
 .env.yaml
+.env.front
+.env.front.yaml
 .idea
 node_modules
 frontend/src
